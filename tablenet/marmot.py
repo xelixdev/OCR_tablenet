@@ -38,10 +38,14 @@ class MarmotDataset(Dataset):
         sample_id = self.data[item].stem
 
         image_path = self.data[item]
-        table_path = self.data[item].parent.parent.joinpath("table_mask", sample_id + ".bmp")
-        column_path = self.data[item].parent.parent.joinpath("column_mask", sample_id + ".bmp")
+        table_path = self.data[item].parent.parent.joinpath(
+            "table_mask", sample_id + ".bmp"
+        )
+        column_path = self.data[item].parent.parent.joinpath(
+            "column_mask", sample_id + ".bmp"
+        )
 
-        image = np.array(Image.open(image_path))
+        image = np.array(Image.open(image_path).convert("RGB"))
         table_mask = np.expand_dims(np.array(Image.open(table_path)), axis=2)
         column_mask = np.expand_dims(np.array(Image.open(column_path)), axis=2)
         mask = np.concatenate([table_mask, column_mask], axis=2) / 255
@@ -58,8 +62,14 @@ class MarmotDataset(Dataset):
 class MarmotDataModule(pl.LightningDataModule):
     """Pytorch Lightning Data Module for Marmot."""
 
-    def __init__(self, data_dir: str = "./data", transforms_preprocessing: Compose = None,
-                 transforms_augmentation: Compose = None, batch_size: int = 8, num_workers: int = 4):
+    def __init__(
+        self,
+        data_dir: str = "./data",
+        transforms_preprocessing: Compose = None,
+        transforms_augmentation: Compose = None,
+        batch_size: int = 8,
+        num_workers: int = 4,
+    ):
         """Marmot Data Module initialization.
 
         Args:
@@ -92,27 +102,44 @@ class MarmotDataModule(pl.LightningDataModule):
         val_slice = slice(int(n_samples * 0.8), int(n_samples * 0.9))
         test_slice = slice(int(n_samples * 0.9), n_samples)
 
-        self.complaint_train = MarmotDataset(self.data[train_slice], transforms=self.transforms_augmentation)
-        self.complaint_val = MarmotDataset(self.data[val_slice], transforms=self.transforms_preprocessing)
-        self.complaint_test = MarmotDataset(self.data[test_slice], transforms=self.transforms_preprocessing)
+        self.complaint_train = MarmotDataset(
+            self.data[train_slice], transforms=self.transforms_augmentation
+        )
+        self.complaint_val = MarmotDataset(
+            self.data[val_slice], transforms=self.transforms_preprocessing
+        )
+        self.complaint_test = MarmotDataset(
+            self.data[test_slice], transforms=self.transforms_preprocessing
+        )
 
     def train_dataloader(self, *args, **kwargs) -> DataLoader:
         """Create Dataloader.
 
         Returns: DataLoader
         """
-        return DataLoader(self.complaint_train, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
+        return DataLoader(
+            self.complaint_train,
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=self.num_workers,
+        )
 
     def val_dataloader(self, *args, **kwargs) -> DataLoader:
         """Create Dataloader.
 
         Returns: DataLoader
         """
-        return DataLoader(self.complaint_val, batch_size=self.batch_size, num_workers=self.num_workers)
+        return DataLoader(
+            self.complaint_val, batch_size=self.batch_size, num_workers=self.num_workers
+        )
 
     def test_dataloader(self, *args, **kwargs) -> DataLoader:
         """Create Dataloader.
 
         Returns: DataLoader
         """
-        return DataLoader(self.complaint_test, batch_size=self.batch_size, num_workers=self.num_workers)
+        return DataLoader(
+            self.complaint_test,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+        )

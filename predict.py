@@ -22,7 +22,13 @@ from tablenet import TableNetModule
 class Predict:
     """Predict images using pre-trained model."""
 
-    def __init__(self, checkpoint_path: str, transforms: Compose, threshold: float = 0.5, per: float = 0.005):
+    def __init__(
+        self,
+        checkpoint_path: str,
+        transforms: Compose,
+        threshold: float = 0.5,
+        per: float = 0.005,
+    ):
         """Predict images using pre-trained TableNet model.
 
         Args:
@@ -58,7 +64,9 @@ class Predict:
 
         tables = []
         for table in segmented_tables:
-            segmented_columns = self._process_columns(self._segment_image(column_mask * table))
+            segmented_columns = self._process_columns(
+                self._segment_image(column_mask * table)
+            )
             if segmented_columns:
                 cols = []
                 for column in segmented_columns.values():
@@ -103,18 +111,23 @@ class Predict:
     @staticmethod
     def _column_to_dataframe(column, image):
         width, height = image.size
-        column = resize(np.expand_dims(column, axis=2), (height, width), preserve_range=True) > 0.01
+        column = (
+            resize(np.expand_dims(column, axis=2), (height, width), preserve_range=True)
+            > 0.01
+        )
 
         crop = column * image
         white = np.ones(column.shape) * invert(column) * 255
         crop = crop + white
         ocr = image_to_string(Image.fromarray(crop.astype(np.uint8)))
-        return pd.DataFrame({"col": [value for value in ocr.split("\n") if len(value) > 0]})
+        return pd.DataFrame(
+            {"col": [value for value in ocr.split("\n") if len(value) > 0]}
+        )
 
 
 @click.command()
-@click.option('--image_path', default="./data/Marmot_data/10.1.1.193.1812_24.bmp")
-@click.option('--model_weights', default="./data/best_model.ckpt")
+@click.option("--image_path", default="./data/Marmot_data/10.1.1.193.1812_24.bmp")
+@click.option("--model_weights", default="./data/best_model.ckpt")
 def predict(image_path: str, model_weights: str) -> List[pd.DataFrame]:
     """Predict table content.
 
@@ -127,16 +140,14 @@ def predict(image_path: str, model_weights: str) -> List[pd.DataFrame]:
     import albumentations as album
     from albumentations.pytorch.transforms import ToTensorV2
 
-    transforms = album.Compose([
-        album.Resize(896, 896, always_apply=True),
-        album.Normalize(),
-        ToTensorV2()
-    ])
+    transforms = album.Compose(
+        [album.Resize(896, 896, always_apply=True), album.Normalize(), ToTensorV2()]
+    )
     pred = Predict(model_weights, transforms)
 
     image = Image.open(image_path)
     print(pred.predict(image))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     predict()

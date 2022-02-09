@@ -49,9 +49,9 @@ class TableNetModule(pl.LightningModule):
         loss_table = self.dice_loss(output_table, labels_table)
         loss_column = self.dice_loss(output_column, labels_column)
 
-        self.log('train_loss_table', loss_table)
-        self.log('train_loss_column', loss_column)
-        self.log('train_loss', loss_column + loss_table)
+        self.log("train_loss_table", loss_table)
+        self.log("train_loss_column", loss_column)
+        self.log("train_loss", loss_column + loss_table)
         return loss_table + loss_column
 
     def validation_step(self, batch, batch_idx):
@@ -70,13 +70,28 @@ class TableNetModule(pl.LightningModule):
         loss_column = self.dice_loss(output_column, labels_column)
 
         if batch_idx == 0:
-            self._log_images("validation", samples, labels_table, labels_column, output_table, output_column)
+            self._log_images(
+                "validation",
+                samples,
+                labels_table,
+                labels_column,
+                output_table,
+                output_column,
+            )
 
-        self.log('valid_loss_table', loss_table, on_epoch=True)
-        self.log('valid_loss_column', loss_column, on_epoch=True)
-        self.log('validation_loss', loss_column + loss_table, on_epoch=True)
-        self.log('validation_iou_table', binary_mean_iou(output_table, labels_table), on_epoch=True)
-        self.log('validation_iou_column', binary_mean_iou(output_column, labels_column), on_epoch=True)
+        self.log("valid_loss_table", loss_table, on_epoch=True)
+        self.log("valid_loss_column", loss_column, on_epoch=True)
+        self.log("validation_loss", loss_column + loss_table, on_epoch=True)
+        self.log(
+            "validation_iou_table",
+            binary_mean_iou(output_table, labels_table),
+            on_epoch=True,
+        )
+        self.log(
+            "validation_iou_column",
+            binary_mean_iou(output_column, labels_column),
+            on_epoch=True,
+        )
         return loss_table + loss_column
 
     def test_step(self, batch, batch_idx):
@@ -95,13 +110,26 @@ class TableNetModule(pl.LightningModule):
         loss_column = self.dice_loss(output_column, labels_column)
 
         if batch_idx == 0:
-            self._log_images("test", samples, labels_table, labels_column, output_table, output_column)
+            self._log_images(
+                "test",
+                samples,
+                labels_table,
+                labels_column,
+                output_table,
+                output_column,
+            )
 
-        self.log('test_loss_table', loss_table, on_epoch=True)
-        self.log('test_loss_column', loss_column, on_epoch=True)
-        self.log('test_loss', loss_column + loss_table, on_epoch=True)
-        self.log('test_iou_table', binary_mean_iou(output_table, labels_table), on_epoch=True)
-        self.log('test_iou_column', binary_mean_iou(output_column, labels_column), on_epoch=True)
+        self.log("test_loss_table", loss_table, on_epoch=True)
+        self.log("test_loss_column", loss_column, on_epoch=True)
+        self.log("test_loss", loss_column + loss_table, on_epoch=True)
+        self.log(
+            "test_iou_table", binary_mean_iou(output_table, labels_table), on_epoch=True
+        )
+        self.log(
+            "test_iou_column",
+            binary_mean_iou(output_column, labels_column),
+            on_epoch=True,
+        )
         return loss_table + loss_column
 
     def configure_optimizers(self):
@@ -112,20 +140,33 @@ class TableNetModule(pl.LightningModule):
         """
         optimizer = optim.SGD(self.parameters(), lr=0.0001)
         scheduler = {
-            'scheduler': optim.lr_scheduler.OneCycleLR(optimizer,
-                                                       max_lr=0.0001, steps_per_epoch=204, epochs=500, pct_start=0.1),
-            'interval': 'step',
+            "scheduler": optim.lr_scheduler.OneCycleLR(
+                optimizer, max_lr=0.0001, steps_per_epoch=204, epochs=500, pct_start=0.1
+            ),
+            "interval": "step",
         }
 
         return [optimizer], [scheduler]
 
-    def _log_images(self, mode, samples, labels_table, labels_column, output_table, output_column):
+    def _log_images(
+        self, mode, samples, labels_table, labels_column, output_table, output_column
+    ):
         """Log image on to logger."""
-        self.logger.experiment.add_images(f'{mode}_generated_images', samples[0:4], self.current_epoch)
-        self.logger.experiment.add_images(f'{mode}_labels_table', labels_table[0:4], self.current_epoch)
-        self.logger.experiment.add_images(f'{mode}_labels_column', labels_column[0:4], self.current_epoch)
-        self.logger.experiment.add_images(f'{mode}_output_table', output_table[0:4], self.current_epoch)
-        self.logger.experiment.add_images(f'{mode}_output_column', output_column[0:4], self.current_epoch)
+        self.logger.experiment.add_images(
+            f"{mode}_generated_images", samples[0:4], self.current_epoch
+        )
+        self.logger.experiment.add_images(
+            f"{mode}_labels_table", labels_table[0:4], self.current_epoch
+        )
+        self.logger.experiment.add_images(
+            f"{mode}_labels_column", labels_column[0:4], self.current_epoch
+        )
+        self.logger.experiment.add_images(
+            f"{mode}_output_table", output_table[0:4], self.current_epoch
+        )
+        self.logger.experiment.add_images(
+            f"{mode}_output_column", output_column[0:4], self.current_epoch
+        )
 
 
 class TableNet(nn.Module):
@@ -139,14 +180,20 @@ class TableNet(nn.Module):
             batch_norm (bool): Select VGG with or without batch normalization.
         """
         super().__init__()
-        self.vgg = vgg19(pretrained=True).features if not batch_norm else vgg19_bn(pretrained=True).features
+        self.vgg = (
+            vgg19(pretrained=True).features
+            if not batch_norm
+            else vgg19_bn(pretrained=True).features
+        )
         self.layers = [18, 27] if not batch_norm else [26, 39]
-        self.model = nn.Sequential(nn.Conv2d(512, 512, kernel_size=1),
-                                   nn.ReLU(inplace=True),
-                                   nn.Dropout(0.8),
-                                   nn.Conv2d(512, 512, kernel_size=1),
-                                   nn.ReLU(inplace=True),
-                                   nn.Dropout(0.8))
+        self.model = nn.Sequential(
+            nn.Conv2d(512, 512, kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.8),
+            nn.Conv2d(512, 512, kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.8),
+        )
         self.table_decoder = TableDecoder(num_class)
         self.column_decoder = ColumnDecoder(num_class)
 
@@ -185,7 +232,9 @@ class ColumnDecoder(nn.Module):
             nn.Conv2d(512, 512, kernel_size=1),
             nn.ReLU(inplace=True),
         )
-        self.layer = nn.ConvTranspose2d(1280, num_classes, kernel_size=2, stride=2, dilation=1)
+        self.layer = nn.ConvTranspose2d(
+            1280, num_classes, kernel_size=2, stride=2, dilation=1
+        )
 
     def forward(self, x, pools):
         """Forward pass.
@@ -246,7 +295,7 @@ class DiceLoss(nn.Module):
         targets = targets.view(-1)
 
         intersection = (inputs * targets).sum()
-        dice = (2. * intersection + smooth) / (inputs.sum() + targets.sum() + smooth)
+        dice = (2.0 * intersection + smooth) / (inputs.sum() + targets.sum() + smooth)
 
         return 1 - dice
 
