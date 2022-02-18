@@ -32,7 +32,7 @@ if __name__ == "__main__":
     )
 
     complaint_dataset = MarmotDataModule(
-        data_dir="./data/xelix_data/images",
+        data_dir="data/xelix_data/",
         transforms_preprocessing=transforms_preprocessing,
         transforms_augmentation=transforms_augmentation,
         batch_size=2,
