@@ -10,7 +10,7 @@ from pytorch_lightning.callbacks import (
     EarlyStopping,
     LearningRateMonitor,
 )
-
+import joblib
 from tablenet import MarmotDataModule
 from tablenet import TableNetModule
 
@@ -32,10 +32,10 @@ if __name__ == "__main__":
     )
 
     complaint_dataset = MarmotDataModule(
-        data_dir="./data/xelix_data/images",
+        data_dir="data/blend/xelix_data",
         transforms_preprocessing=transforms_preprocessing,
         transforms_augmentation=transforms_augmentation,
-        batch_size=2,
+        batch_size=1,
         num_workers=8,
     )  # type: ignore
 
@@ -53,8 +53,12 @@ if __name__ == "__main__":
     trainer = pl.Trainer(
         callbacks=[lr_monitor, checkpoint_callback, early_stop_callback],
         logger=logger,
-        max_epochs=500,
+        max_epochs=200,
         gpus=1 if torch.cuda.is_available() else None,
+        default_root_dir="checkpoints/"
     )
     trainer.fit(model, datamodule=complaint_dataset)
     trainer.test()
+    trainer.save_checkpoint("model.ckpt")
+
+

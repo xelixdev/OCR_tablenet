@@ -118,7 +118,7 @@ class Predict:
 # @click.command()
 # @click.option('--image_path', default="data/Marmot_data/10.1.1.193.1812_24.bmp")
 # @click.option('--model_weights', default="data/best_model.ckpt")
-def predict(image_path: str, model_weights: str) -> List[pd.DataFrame]:
+def predict(image_path: str, model_weights: str, transforms) -> List[pd.DataFrame]:
     """Predict table content.
 
     Args:
@@ -127,15 +127,7 @@ def predict(image_path: str, model_weights: str) -> List[pd.DataFrame]:
 
     Returns (List[pd.DataFrame]): Tables in pandas DataFrame format.
     """
-    import albumentations as album
-    from albumentations.pytorch.transforms import ToTensorV2
 
-    transforms = album.Compose([
-        album.Resize(896, 896, always_apply=True),
-        album.Normalize(),
-        ToTensorV2()
-    ])
-    
     pred = Predict(model_weights, transforms)
 
     image = Image.open(image_path)
