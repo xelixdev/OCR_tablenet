@@ -49,23 +49,12 @@ class Predict:
         """
         processed_image = self.transforms(image=np.array(image))["image"]
 
-        table_mask, column_mask = self.model.forward(processed_image.unsqueeze(0))
+        table_mask, _ = self.model.forward(processed_image.unsqueeze(0))
 
         table_mask = self._apply_threshold(table_mask)
         
-        # if extract_data == True:
-        column_mask = self._apply_threshold(column_mask)
-
         segmented_tables = self._process_tables(self._segment_image(table_mask))
 
-#             tables = []
-#             for table in segmented_tables:
-#                 segmented_columns = self._process_columns(self._segment_image(column_mask * table))
-#                 if segmented_columns:
-#                     cols = []
-#                     for column in segmented_columns.values():
-#                         cols.append(self._column_to_dataframe(column, image))
-#                     tables.append(pd.concat(cols, ignore_index=True, axis=1))
 
 #             return tables
         return segmented_tables
@@ -83,17 +72,6 @@ class Predict:
                 tables.append(convex_hull_image(table))
         return tables
 
-    def _process_columns(self, segmented_columns):
-        width, height = segmented_columns.shape
-        cols = {}
-        for j in np.unique(segmented_columns)[1:]:
-            column = np.where(segmented_columns == j, 1, 0)
-            column = column.astype(int)
-
-            if column.sum() > width * height * self.per:
-                position = regionprops(column)[0].centroid[1]
-                cols[position] = column
-        return OrderedDict(sorted(cols.items()))
 
     @staticmethod
     def _segment_image(image):
@@ -102,17 +80,6 @@ class Predict:
         cleared = clear_border(bw)
         label_image = label(cleared)
         return label_image
-
-    @staticmethod
-    def _column_to_dataframe(column, image):
-        width, height = image.size
-        column = resize(np.expand_dims(column, axis=2), (height, width), preserve_range=True) > 0.01
-
-        crop = column * image
-        white = np.ones(column.shape) * invert(column) * 255
-        crop = crop + white
-        ocr = image_to_string(Image.fromarray(crop.astype(np.uint8)))
-        return pd.DataFrame({"col": [value for value in ocr.split("\n") if len(value) > 0]})
 
 
 # @click.command()

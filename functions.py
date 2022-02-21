@@ -186,28 +186,29 @@ def transform_images():
     ])
     return transforms
 
-def get_model_coordinates(model, transforms):
+def get_model_coordinates(model, transforms, file):
     
     table_mask = predict(
-        image_path="png_file.png", 
+        image_path=file, 
         model_weights=model,
         transforms=transforms 
     )
     if len(table_mask) > 0:
-        table_1 = table_mask[0]
+        table_1 = table_mask[1]
         coords = np.column_stack(np.where(table_1 > 0))
-        X_coords = coords[:, 0]
-        Y_coords = coords[:, 1]
-        # Y_coords = [x[1] for x in coords]
+        # X_coords = coords[:, 0]
+        # Y_coords = coords[:, 1]
+        X_coords = [x[0] for x in coords]
+        Y_coords = [x[1] for x in coords]
         
-        Y_0_model = min(X_coords) * 2338/896
-        Y_1_model = max(X_coords) * 2338/896
-        X_0_model = min(Y_coords) * 1654/896
-        X_1_model = max(Y_coords) * 1654/896
+        # Y_0_model = min(X_coords) * 2200/896
+        # Y_1_model = max(X_coords) * 2200/896
+        # X_0_model = min(Y_coords) * 1700/896
+        # X_1_model = max(Y_coords) * 1700/896
         # model = {'x1': X_0_model, 'x2': X_1_model, 'y1': Y_0_model, 'y2': Y_1_model}
     else: 
         Y_0_model = 0
         Y_1_model = 0
         X_0_model = 0
         X_1_model = 0
-    return X_0_model, X_1_model, Y_0_model, Y_1_model
+    return X_coords, Y_coords, table_mask

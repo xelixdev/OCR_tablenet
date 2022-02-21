@@ -24,7 +24,6 @@ class Predict:
 
     def __init__(self, checkpoint_path: str, transforms: Compose, threshold: float = 0.5, per: float = 0.005):
         """Predict images using pre-trained TableNet model.
-
         Args:
             checkpoint_path (str): model weights path.
             transforms (Optional[Compose]): Compose object from albumentations used for pre-processing.
@@ -39,12 +38,10 @@ class Predict:
         self.model.eval()
         self.model.requires_grad_(False)
 
-    def predict(self, image: Image, extract_data=False) -> List[pd.DataFrame]:
+    def predict(self, image: Image) -> List[pd.DataFrame]:
         """Predict a image table values.
-
         Args:
             image (Image): PIL.Image to
-
         Returns (List[pd.DataFrame]): Tables in pandas DataFrame format.
         """
         processed_image = self.transforms(image=np.array(image))["image"]
@@ -52,23 +49,19 @@ class Predict:
         table_mask, column_mask = self.model.forward(processed_image.unsqueeze(0))
 
         table_mask = self._apply_threshold(table_mask)
-        
-        # if extract_data == True:
         column_mask = self._apply_threshold(column_mask)
 
         segmented_tables = self._process_tables(self._segment_image(table_mask))
 
-#             tables = []
-#             for table in segmented_tables:
-#                 segmented_columns = self._process_columns(self._segment_image(column_mask * table))
-#                 if segmented_columns:
-#                     cols = []
-#                     for column in segmented_columns.values():
-#                         cols.append(self._column_to_dataframe(column, image))
-#                     tables.append(pd.concat(cols, ignore_index=True, axis=1))
-
-#             return tables
-        return segmented_tables
+        tables = []
+        for table in segmented_tables:
+            segmented_columns = self._process_columns(self._segment_image(column_mask * table))
+            if segmented_columns:
+                cols = []
+                for column in segmented_columns.values():
+                    cols.append(self._column_to_dataframe(column, image))
+                tables.append(pd.concat(cols, ignore_index=True, axis=1))
+        return segmented_tables, tables
 
     def _apply_threshold(self, mask):
         mask = mask.squeeze(0).squeeze(0).numpy() > self.threshold
@@ -81,6 +74,7 @@ class Predict:
             table = np.where(segmented_tables == i, 1, 0)
             if table.sum() > height * width * self.per:
                 tables.append(convex_hull_image(table))
+
         return tables
 
     def _process_columns(self, segmented_columns):
@@ -116,15 +110,13 @@ class Predict:
 
 
 # @click.command()
-# @click.option('--image_path', default="data/Marmot_data/10.1.1.193.1812_24.bmp")
-# @click.option('--model_weights', default="data/best_model.ckpt")
+# @click.option('--image_path', default="./data/Marmot_data/10.1.1.193.1812_24.bmp")
+# @click.option('--model_weights', default="./data/best_model.ckpt")
 def predict(image_path: str, model_weights: str) -> List[pd.DataFrame]:
     """Predict table content.
-
     Args:
         image_path (str): image path.
         model_weights (str): model weights path.
-
     Returns (List[pd.DataFrame]): Tables in pandas DataFrame format.
     """
     import albumentations as album
@@ -135,10 +127,8 @@ def predict(image_path: str, model_weights: str) -> List[pd.DataFrame]:
         album.Normalize(),
         ToTensorV2()
     ])
-    
     pred = Predict(model_weights, transforms)
 
     image = Image.open(image_path)
-    predictions = pred.predict(image)
-    return predictions
-
+    # print(pred.predict(image))
+    return pred.predict(image)

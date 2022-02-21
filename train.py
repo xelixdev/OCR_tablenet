@@ -32,7 +32,7 @@ if __name__ == "__main__":
     )
 
     complaint_dataset = MarmotDataModule(
-        data_dir="data/blend/xelix_data",
+        data_dir="data/blend_2/xelix_data",
         transforms_preprocessing=transforms_preprocessing,
         transforms_augmentation=transforms_augmentation,
         batch_size=1,
@@ -53,12 +53,12 @@ if __name__ == "__main__":
     trainer = pl.Trainer(
         callbacks=[lr_monitor, checkpoint_callback, early_stop_callback],
         logger=logger,
-        max_epochs=200,
+        max_epochs=500,
         gpus=1 if torch.cuda.is_available() else None,
         default_root_dir="checkpoints/"
     )
     trainer.fit(model, datamodule=complaint_dataset)
     trainer.test()
-    trainer.save_checkpoint("model.ckpt")
+    trainer.save_checkpoint("model_blend_2.ckpt")
 
 
