@@ -16,7 +16,7 @@ from skimage.morphology import closing, square, convex_hull_image
 from skimage.transform import resize
 from skimage.util import invert
 
-from tablenet import TableNetModule
+from tablenet import TableNetModule2
 
 
 class Predict:
@@ -34,7 +34,7 @@ class Predict:
         self.threshold = threshold
         self.per = per
 
-        self.model = TableNetModule.load_from_checkpoint(checkpoint_path)
+        self.model = TableNetModule2.load_from_checkpoint(checkpoint_path)
         self.model.eval()
         self.model.requires_grad_(False)
 
@@ -46,22 +46,22 @@ class Predict:
         """
         processed_image = self.transforms(image=np.array(image))["image"]
 
-        table_mask = self.model.forward(processed_image.unsqueeze(0))
+        table_mask, column_mask = self.model.forward(processed_image.unsqueeze(0))
 
         table_mask = self._apply_threshold(table_mask)
+        column_mask = self._apply_threshold(column_mask)
 
         segmented_tables = self._process_tables(self._segment_image(table_mask))
 
-#         tables = []
-#         for table in segmented_tables:
-#             segmented_columns = self._process_columns(self._segment_image(column_mask * table))
-#             if segmented_columns:
-#                 cols = []
-#                 for column in segmented_columns.values():
-#                     cols.append(self._column_to_dataframe(column, image))
-#                 tables.append(pd.concat(cols, ignore_index=True, axis=1))
-#         return segmented_tables, tables
-        return segmented_tables
+        tables = []
+        for table in segmented_tables:
+            segmented_columns = self._process_columns(self._segment_image(column_mask * table))
+            if segmented_columns:
+                cols = []
+                for column in segmented_columns.values():
+                    cols.append(self._column_to_dataframe(column, image))
+                tables.append(pd.concat(cols, ignore_index=True, axis=1))
+        return segmented_tables, tables
 
     def _apply_threshold(self, mask):
         mask = mask.squeeze(0).squeeze(0).numpy() > self.threshold
@@ -112,7 +112,7 @@ class Predict:
 # @click.command()
 # @click.option('--image_path', default="./data/Marmot_data/10.1.1.193.1812_24.bmp")
 # @click.option('--model_weights', default="./data/best_model.ckpt")
-def predict(image_path: str, model_weights: str) -> List[pd.DataFrame]:
+def predict_with_columns(image_path: str, model_weights: str) -> List[pd.DataFrame]:
     """Predict table content.
     Args:
         image_path (str): image path.

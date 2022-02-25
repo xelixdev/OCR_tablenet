@@ -32,7 +32,7 @@ if __name__ == "__main__":
     )
 
     complaint_dataset = MarmotDataModule(
-        data_dir="data/blend_2/xelix_data",
+        data_dir="data/xelix_data",
         transforms_preprocessing=transforms_preprocessing,
         transforms_augmentation=transforms_augmentation,
         batch_size=1,
@@ -59,6 +59,6 @@ if __name__ == "__main__":
     )
     trainer.fit(model, datamodule=complaint_dataset)
     trainer.test()
-    trainer.save_checkpoint("model_blend_2.ckpt")
+    trainer.save_checkpoint("model_blend_5.ckpt")
 
 

@@ -36,27 +36,24 @@ class MarmotDataset(Dataset):
         Returns (Tuple[tensor, tensor, tensor]): Image, Table Mask, Column Mask
         """
         sample_id = self.data[item].stem
-
+        
         image_path = self.data[item]
         table_path = self.data[item].parent.parent.joinpath(
             "table_mask", sample_id + ".bmp"
         )
-        column_path = self.data[item].parent.parent.joinpath(
-            "column_mask", sample_id + ".bmp"
-        )
+        # print(image_path)
 
         image = np.array(Image.open(image_path).convert("RGB"))
         table_mask = np.expand_dims(np.array(Image.open(table_path).convert("L")), axis=2)
-        column_mask = np.expand_dims(np.array(Image.open(column_path).convert("L")), axis=2)
-        mask = np.concatenate([table_mask, column_mask], axis=2) / 255
+        mask = table_mask/ 255
         sample = {"image": image, "mask": mask}
         if self.transforms:
             sample = self.transforms(image=image, mask=mask)
 
         image = sample["image"]
         mask_table = sample["mask"][:, :, 0].unsqueeze(0)
-        mask_column = sample["mask"][:, :, 1].unsqueeze(0)
-        return image, mask_table, mask_column
+
+        return image, mask_table
 
 
 class MarmotDataModule(pl.LightningDataModule):
